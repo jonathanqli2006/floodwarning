@@ -1,0 +1,22 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": { "name": "Example risk area", "risk": 0.75 },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [-77.70, 39.30],
+            [-76.75, 39.30],
+            [-76.75, 38.65],
+            [-77.70, 38.65],
+            [-77.70, 39.30]
+          ]
+        ]
+      }
+    }
+  ]
+}
+
