@@ -95,8 +95,7 @@ async function init() {
   renderLegend();
 
   // Replace this URL with your actual S3 object URL once uploaded
-  const cogUrl = "https://floodtrace-cogs.s3.us-east-2.amazonaws.com/cogs/test_cog.tif";
-  
+  const cogUrl = "https://floodtrace-cogs.s3.us-east-2.amazonaws.com/test_cog.tif";  
   try {
     await loadCOG(cogUrl);
   } catch (e) {
