@@ -54,40 +54,24 @@ async function loadCOG(url) {
   clearOverlay();
   setStatus("Loading COG...");
 
-  const tiff = await GeoTIFF.fromUrl(url);
-  const image = await tiff.getImage();
-  const data = await image.readRasters();
+  const response = await fetch(url);
+  const arrayBuffer = await response.arrayBuffer();
+  const georaster = await parseGeoraster(arrayBuffer);
 
-  const width = image.getWidth();
-  const height = image.getHeight();
-  const bbox = image.getBoundingBox();
+  overlayLayer = new GeoRasterLayer({
+    georaster,
+    opacity: 0.7,
+    pixelValuesToColorFn: (values) => {
+      const val = values[0];
+      if (val === 1) return "rgba(0, 92, 230, 0.7)";
+      if (val === 3) return "rgba(219, 0, 0, 0.8)";
+      return null; // transparent for nodata
+    },
+    resolution: 256,
+  });
 
-  const canvas = document.createElement("canvas");
-  canvas.width = width;
-  canvas.height = height;
-  const ctx = canvas.getContext("2d");
-  const imageData = ctx.createImageData(width, height);
-  const pixels = data[0];
-
-  for (let i = 0; i < pixels.length; i++) {
-    const val = pixels[i];
-    const idx = i * 4;
-    const cls = CLASSES[val];
-    if (cls) {
-      imageData.data[idx]     = cls.color[0];
-      imageData.data[idx + 1] = cls.color[1];
-      imageData.data[idx + 2] = cls.color[2];
-      imageData.data[idx + 3] = cls.alpha;
-    } else {
-      imageData.data[idx + 3] = 0;
-    }
-  }
-
-  ctx.putImageData(imageData, 0, 0);
-
-  const bounds = [[bbox[1], bbox[0]], [bbox[3], bbox[2]]];
-  overlayLayer = L.imageOverlay(canvas.toDataURL(), bounds, { opacity: 1 }).addTo(map);
-  map.fitBounds(bounds);
+  overlayLayer.addTo(map);
+  map.fitBounds(overlayLayer.getBounds());
   setStatus("Loaded.");
 }
 
