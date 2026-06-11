@@ -1,13 +1,11 @@
-/* global L, GeoTIFF */
+/* global L, parseGeoraster, GeoRasterLayer */
 
 const STATUS = document.getElementById("status");
-const DATE_INPUT = document.getElementById("dateInput");
-const DATE_HELP = document.getElementById("dateHelp");
 const LEGEND = document.getElementById("legend");
 
 const CLASSES = {
-  1: { color: [0, 92, 230], label: "Pre-event Water", alpha: 180 },
-  3: { color: [219, 0, 0], label: "Flood Inundation", alpha: 200 },
+  1: { color: "rgba(0, 92, 230, 0.7)", label: "Pre-event Water" },
+  3: { color: "rgba(219, 0, 0, 0.8)", label: "Flood Inundation" },
 };
 
 function setStatus(text) {
@@ -22,7 +20,7 @@ function renderLegend() {
 
     const swatch = document.createElement("div");
     swatch.className = "swatch";
-    swatch.style.background = `rgb(${cls.color.join(",")})`;
+    swatch.style.background = cls.color;
 
     const text = document.createElement("div");
     text.className = "legendText";
@@ -34,8 +32,8 @@ function renderLegend() {
   });
 }
 
-// Map
-const map = L.map("map", { zoomControl: true }).setView([38.9, -77.03], 6);
+// Map — centered on Alberta/Saskatchewan where the data is
+const map = L.map("map", { zoomControl: true }).setView([50.4, -109.7], 8);
 
 L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
   maxZoom: 19,
@@ -54,37 +52,36 @@ async function loadCOG(url) {
   clearOverlay();
   setStatus("Loading COG...");
 
-  const response = await fetch(url);
-  const arrayBuffer = await response.arrayBuffer();
-  const georaster = await parseGeoraster(arrayBuffer);
+  try {
+    const response = await fetch(url);
+    const arrayBuffer = await response.arrayBuffer();
+    const georaster = await parseGeoraster(arrayBuffer);
 
-  overlayLayer = new GeoRasterLayer({
-    georaster,
-    opacity: 0.7,
-    pixelValuesToColorFn: (values) => {
-      const val = values[0];
-      if (val === 1) return "rgba(0, 92, 230, 0.7)";
-      if (val === 3) return "rgba(219, 0, 0, 0.8)";
-      return null; // transparent for nodata
-    },
-    resolution: 256,
-  });
+    overlayLayer = new GeoRasterLayer({
+      georaster,
+      opacity: 0.7,
+      pixelValuesToColorFn: (values) => {
+        const val = values[0];
+        if (val === 1) return "rgba(0, 92, 230, 0.7)";
+        if (val === 3) return "rgba(219, 0, 0, 0.8)";
+        return null;
+      },
+      resolution: 256,
+    });
 
-  overlayLayer.addTo(map);
-  map.fitBounds(overlayLayer.getBounds());
-  setStatus("Loaded.");
+    overlayLayer.addTo(map);
+    map.fitBounds(overlayLayer.getBounds());
+    setStatus("Loaded.");
+  } catch (e) {
+    setStatus("Failed to load COG: " + e.message);
+    console.error(e);
+  }
 }
 
 async function init() {
   renderLegend();
-
-  // Replace this URL with your actual S3 object URL once uploaded
-  const cogUrl = "https://floodtrace-cogs.s3.us-east-2.amazonaws.com/test_cog.tif";  
-  try {
-    await loadCOG(cogUrl);
-  } catch (e) {
-    setStatus("Failed to load COG: " + e.message);
-  }
+  const cogUrl = "https://floodtrace-cogs.s3.us-east-2.amazonaws.com/test_cog.tif";
+  await loadCOG(cogUrl);
 }
 
 init();
