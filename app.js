@@ -7,9 +7,12 @@ const CLASSES = {
   1: { color: "rgba(0, 92, 230, 0.7)", label: "Pre-event Water" },
   3: { color: "rgba(219, 0, 0, 0.8)", label: "Flood Inundation" },
 };
+<<<<<<< HEAD
 
 const MANIFEST_URL = "https://floodtrace-cogs.s3.us-east-2.amazonaws.com/manifest.json";
 const ZOOM_THRESHOLD = 7; // below this zoom, show outlines only; at/above, load actual data
+=======
+>>>>>>> 8818f9af4019591b5b5d5888c63ac9e82fe2b1bc
 
 function setStatus(text) {
   STATUS.textContent = text;
@@ -33,6 +36,7 @@ function renderLegend() {
     row.appendChild(text);
     LEGEND.appendChild(row);
   });
+<<<<<<< HEAD
 
   // Add outline indicator to legend
   const row = document.createElement("div");
@@ -73,6 +77,12 @@ function parseSceneTime(filename) {
 
 // Map — centered on Alberta/Saskatchewan where the data is
 const map = L.map("map", { zoomControl: true }).setView([49.5, -109.7], 6);
+=======
+}
+
+// Map — centered on Alberta/Saskatchewan where the data is
+const map = L.map("map", { zoomControl: true }).setView([50.4, -109.7], 8);
+>>>>>>> 8818f9af4019591b5b5d5888c63ac9e82fe2b1bc
 
 L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
   maxZoom: 19,
@@ -85,6 +95,7 @@ const dataLayers = new Map(); // filename -> GeoRasterLayer
 let outlineGroup = L.layerGroup().addTo(map);
 let dataGroup = L.layerGroup().addTo(map);
 
+<<<<<<< HEAD
 function boundsToLatLngBounds(bounds) {
   // bounds = [west, south, east, north]
   return L.latLngBounds([bounds[1], bounds[0]], [bounds[3], bounds[2]]);
@@ -212,10 +223,47 @@ let updateTimer = null;
 function scheduleUpdate() {
   if (updateTimer) clearTimeout(updateTimer);
   updateTimer = setTimeout(updateLayers, 250);
+=======
+function clearOverlay() {
+  if (!overlayLayer) return;
+  map.removeLayer(overlayLayer);
+  overlayLayer = null;
+}
+
+async function loadCOG(url) {
+  clearOverlay();
+  setStatus("Loading COG...");
+
+  try {
+    const response = await fetch(url);
+    const arrayBuffer = await response.arrayBuffer();
+    const georaster = await parseGeoraster(arrayBuffer);
+
+    overlayLayer = new GeoRasterLayer({
+      georaster,
+      opacity: 0.7,
+      pixelValuesToColorFn: (values) => {
+        const val = values[0];
+        if (val === 1) return "rgba(0, 92, 230, 0.7)";
+        if (val === 3) return "rgba(219, 0, 0, 0.8)";
+        return null;
+      },
+      resolution: 256,
+    });
+
+    overlayLayer.addTo(map);
+    map.fitBounds(overlayLayer.getBounds());
+    setStatus("Loaded.");
+  } catch (e) {
+    setStatus("Failed to load COG: " + e.message);
+    console.error(e);
+  }
+>>>>>>> 8818f9af4019591b5b5d5888c63ac9e82fe2b1bc
 }
 
 async function init() {
   renderLegend();
+<<<<<<< HEAD
   setStatus("Loading manifest...");
 
   try {
@@ -239,6 +287,10 @@ async function init() {
     setStatus("Failed to load manifest: " + e.message);
     console.error(e);
   }
+=======
+  const cogUrl = "https://floodtrace-cogs.s3.us-east-2.amazonaws.com/test_cog.tif";
+  await loadCOG(cogUrl);
+>>>>>>> 8818f9af4019591b5b5d5888c63ac9e82fe2b1bc
 }
 
 init();
