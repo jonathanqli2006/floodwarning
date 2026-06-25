@@ -8,14 +8,57 @@ const CLASSES = {
   3: { color: "rgba(219, 0, 0, 0.8)", label: "Flood Inundation" },
 };
 
+const MANIFEST_URL = "https://floodtrace-cogs.s3.us-east-2.amazonaws.com/manifest.json";
+const ZOOM_THRESHOLD = 7; // below this zoom, show outlines only; at/above, load actual data
+
+// ---- Benchmarking ----
+// Logs timing + scene counts to the console every time updateLayers runs,
+// so different ZOOM_THRESHOLD values can be compared. Change ZOOM_THRESHOLD
+// above, reload, and repeat the same zoom/pan actions to compare numbers.
+const BENCHMARK = {
+  enabled: true,
+  log: [], // { timestamp, zoom, threshold, visibleCount, newlyLoaded, msElapsed, mode }
+};
+
+function benchmarkStart() {
+  return performance.now();
+}
+
+function benchmarkEnd(startTime, info) {
+  if (!BENCHMARK.enabled) return;
+  const msElapsed = performance.now() - startTime;
+  const entry = { timestamp: new Date().toISOString(), msElapsed: Math.round(msElapsed), ...info };
+  BENCHMARK.log.push(entry);
+  console.log(
+    `[benchmark] zoom=${entry.zoom} threshold=${entry.threshold} mode=${entry.mode} ` +
+    `visible=${entry.visibleCount} newlyLoaded=${entry.newlyLoaded} time=${entry.msElapsed}ms`
+  );
+}
+
+// Call this in the browser console (window.printBenchmarkSummary()) to get
+// an average load time per scene and a quick table of all recorded events.
+window.printBenchmarkSummary = function () {
+  if (BENCHMARK.log.length === 0) {
+    console.log("No benchmark data yet — zoom/pan the map first.");
+    return;
+  }
+  console.table(BENCHMARK.log);
+  const dataEvents = BENCHMARK.log.filter((e) => e.mode === "data" && e.newlyLoaded > 0);
+  if (dataEvents.length > 0) {
+    const avgPerScene =
+      dataEvents.reduce((sum, e) => sum + e.msElapsed / e.newlyLoaded, 0) / dataEvents.length;
+    console.log(`Average load time per newly-loaded scene: ${avgPerScene.toFixed(1)}ms`);
+  }
+};
+
+window.clearBenchmark = function () {
+  BENCHMARK.log = [];
+  console.log("Benchmark log cleared.");
+};
+
 function setStatus(text) {
   STATUS.textContent = text;
 }
-
-
-const MANIFEST_URL = "https://floodtrace-cogs.s3.us-east-2.amazonaws.com/manifest.json";
-const ZOOM_THRESHOLD = 7;
-
 
 function renderLegend() {
   LEGEND.innerHTML = "";
@@ -35,10 +78,46 @@ function renderLegend() {
     row.appendChild(text);
     LEGEND.appendChild(row);
   });
+
+  // Add outline indicator to legend
+  const row = document.createElement("div");
+  row.className = "legendItem";
+  const swatch = document.createElement("div");
+  swatch.className = "swatch";
+  swatch.style.background = "transparent";
+  swatch.style.border = "2px solid #4a90d9";
+  const text = document.createElement("div");
+  text.className = "legendText";
+  text.textContent = "Scene coverage (zoom in to load)";
+  row.appendChild(swatch);
+  row.appendChild(text);
+  LEGEND.appendChild(row);
 }
 
-// Map — centered on Alberta/Saskatchewan where the data is
-const map = L.map("map", { zoomControl: true }).setView([50.4, -109.7], 8);
+// Parse capture datetime from filename
+// e.g. ..._20251201T133201_20251201T133226_... -> start/end times
+function parseSceneTime(filename) {
+  const match = filename.match(/(\d{8}T\d{6})_(\d{8}T\d{6})/);
+  if (!match) return null;
+
+  const parseTimestamp = (ts) => {
+    const year = ts.slice(0, 4);
+    const month = ts.slice(4, 6);
+    const day = ts.slice(6, 8);
+    const hour = ts.slice(9, 11);
+    const min = ts.slice(11, 13);
+    const sec = ts.slice(13, 15);
+    return `${year}-${month}-${day} ${hour}:${min}:${sec} UTC`;
+  };
+
+  return {
+    start: parseTimestamp(match[1]),
+    end: parseTimestamp(match[2]),
+  };
+}
+
+// Map — start zoomed out (CONUS-style overview), fitBounds will adjust once manifest loads
+const map = L.map("map", { zoomControl: true }).setView([45, -100], 4);
 
 L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
   maxZoom: 19,
@@ -114,9 +193,83 @@ async function addData(scene) {
       dataGroup.addLayer(layer);
     }
   } catch (e) {
-    setStatus("Failed to load COG: " + e.message);
-    console.error(e);
+    console.error(`Failed to load ${scene.filename}:`, e);
+    dataLayers.delete(scene.filename);
   }
+}
+
+function removeData(filename) {
+  const layer = dataLayers.get(filename);
+  if (layer && layer !== "loading") {
+    dataGroup.removeLayer(layer);
+  }
+  dataLayers.delete(filename);
+}
+
+function getVisibleScenes() {
+  const mapBounds = map.getBounds();
+  return allScenes.filter((scene) => {
+    const sceneBounds = boundsToLatLngBounds(scene.bounds);
+    return mapBounds.intersects(sceneBounds);
+  });
+}
+
+async function updateLayers() {
+  const startTime = benchmarkStart();
+  const zoom = map.getZoom();
+  const visible = getVisibleScenes();
+  const visibleFilenames = new Set(visible.map((s) => s.filename));
+
+  if (zoom < ZOOM_THRESHOLD) {
+    // Show outlines only, hide data layers
+    outlineGroup.clearLayers();
+    visible.forEach((scene) => {
+      const rect = outlineLayers.get(scene.filename) || (() => {
+        addOutline(scene);
+        return outlineLayers.get(scene.filename);
+      })();
+      outlineGroup.addLayer(rect);
+    });
+    dataGroup.clearLayers();
+    setStatus(`Zoomed out — showing ${visible.length} scene outline(s). Zoom in to load data.`);
+    benchmarkEnd(startTime, {
+      zoom,
+      threshold: ZOOM_THRESHOLD,
+      mode: "outline",
+      visibleCount: visible.length,
+      newlyLoaded: 0,
+    });
+  } else {
+    // Show actual data for visible scenes, outlines hidden
+    outlineGroup.clearLayers();
+
+    // Remove data layers no longer visible
+    for (const filename of Array.from(dataLayers.keys())) {
+      if (!visibleFilenames.has(filename)) {
+        removeData(filename);
+      }
+    }
+
+    const toLoad = visible.filter((scene) => !dataLayers.has(scene.filename));
+
+    // Add data layers for newly visible scenes
+    setStatus(`Loading ${visible.length} scene(s)...`);
+    await Promise.all(toLoad.map((scene) => addData(scene)));
+    setStatus(`Showing ${dataLayers.size} scene(s) at current zoom.`);
+    benchmarkEnd(startTime, {
+      zoom,
+      threshold: ZOOM_THRESHOLD,
+      mode: "data",
+      visibleCount: visible.length,
+      newlyLoaded: toLoad.length,
+    });
+  }
+}
+
+let updateTimer = null;
+function scheduleUpdate() {
+  if (updateTimer) clearTimeout(updateTimer);
+  updateTimer = setTimeout(updateLayers, 250);
 }
 
 async function init() {
