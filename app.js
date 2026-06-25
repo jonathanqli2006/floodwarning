@@ -12,6 +12,11 @@ function setStatus(text) {
   STATUS.textContent = text;
 }
 
+
+const MANIFEST_URL = "https://floodtrace-cogs.s3.us-east-2.amazonaws.com/manifest.json";
+const ZOOM_THRESHOLD = 7;
+
+
 function renderLegend() {
   LEGEND.innerHTML = "";
   Object.entries(CLASSES).forEach(([val, cls]) => {
