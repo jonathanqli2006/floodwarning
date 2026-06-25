@@ -1,4 +1,22 @@
 {
-  "dates": ["2026-06-01"]
+  "format": "geotiff",
+  "title": "Siena SAR classification",
+  "dates": [],
+  "raster": {
+    "mode": "categorical",
+    "band": 0,
+    "nodata": [255],
+    "classes": [
+      {
+        "value": 1,
+        "label": "Class 1 (dominant)",
+        "color": "#1fa2ff"
+      },
+      {
+        "value": 3,
+        "label": "Class 2 (minority)",
+        "color": "#d62828"
+      }
+    ]
+  }
 }
-

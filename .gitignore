@@ -1,0 +1,6 @@
+# On-demand / optional extracted rasters
+data/*.tif
+data/.cache/
+
+# Local config (may contain paths)
+drive.config.json
