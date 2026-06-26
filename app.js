@@ -131,6 +131,7 @@ let availableDates = []; // sorted list of unique date strings present in manife
 let selectedDate = null; // currently selected date string, or null = show all dates
 const outlineLayers = new Map(); // filename -> L.rectangle
 const dataLayers = new Map(); // filename -> GeoRasterLayer
+const georasterCache = new Map(); // filename -> parsed georaster object (avoids re-fetching from S3)
 let outlineGroup = L.layerGroup().addTo(map);
 let dataGroup = L.layerGroup().addTo(map);
 
@@ -175,9 +176,13 @@ async function addData(scene) {
   dataLayers.set(scene.filename, "loading");
 
   try {
-    const response = await fetch(scene.url);
-    const arrayBuffer = await response.arrayBuffer();
-    const georaster = await parseGeoraster(arrayBuffer);
+    let georaster = georasterCache.get(scene.filename);
+    if (!georaster) {
+      const response = await fetch(scene.url);
+      const arrayBuffer = await response.arrayBuffer();
+      georaster = await parseGeoraster(arrayBuffer);
+      georasterCache.set(scene.filename, georaster);
+    }
 
     const layer = new GeoRasterLayer({
       georaster,
@@ -188,7 +193,7 @@ async function addData(scene) {
         if (val === 3) return "rgba(219, 0, 0, 0.8)";
         return null;
       },
-      resolution: 256,
+      resolution: 128,
     });
 
     layer.bindPopup(popupHtml(scene));
@@ -267,6 +272,10 @@ async function updateLayers() {
       outlineGroup.addLayer(rect);
     });
     dataGroup.clearLayers();
+    // Also clear tracking map - layers were removed from the map above,
+    // so forget about them entirely. Otherwise zooming back in later
+    // thinks they're "already loaded" and skips re-adding them.
+    dataLayers.clear();
     setStatus(`Zoomed out — showing ${visible.length} scene outline(s). Zoom in to load data.`);
     benchmarkEnd(startTime, {
       zoom,
