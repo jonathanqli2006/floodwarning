@@ -125,6 +125,8 @@ L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
 }).addTo(map);
 
 let allScenes = [];
+let availableDates = []; // sorted list of unique date strings present in manifest
+let selectedDate = null; // currently selected date string, or null = show all dates
 const outlineLayers = new Map(); // filename -> L.rectangle
 const dataLayers = new Map(); // filename -> GeoRasterLayer
 let outlineGroup = L.layerGroup().addTo(map);
@@ -209,9 +211,41 @@ function removeData(filename) {
 function getVisibleScenes() {
   const mapBounds = map.getBounds();
   return allScenes.filter((scene) => {
+    if (selectedDate && scene.date !== selectedDate) return false;
     const sceneBounds = boundsToLatLngBounds(scene.bounds);
     return mapBounds.intersects(sceneBounds);
   });
+}
+
+function getScenesForDate(dateStr) {
+  return allScenes.filter((s) => s.date === dateStr);
+}
+
+async function selectDate(dateStr) {
+  selectedDate = dateStr || null;
+
+  // Clear everything currently shown - we're switching context
+  outlineGroup.clearLayers();
+  dataGroup.clearLayers();
+  outlineLayers.clear();
+  for (const filename of Array.from(dataLayers.keys())) {
+    dataLayers.delete(filename);
+  }
+
+  const scenesForDate = selectedDate ? getScenesForDate(selectedDate) : allScenes;
+
+  if (scenesForDate.length === 0) {
+    setStatus(selectedDate ? `No scenes found for ${selectedDate}.` : "No scenes available.");
+    return;
+  }
+
+  // Fit map to this date's scene bounds
+  const allBounds = scenesForDate.map((s) => boundsToLatLngBounds(s.bounds));
+  let combined = allBounds[0];
+  allBounds.forEach((b) => (combined = combined.extend(b)));
+  map.fitBounds(combined, { padding: [20, 20] });
+
+  await updateLayers();
 }
 
 async function updateLayers() {
@@ -283,16 +317,42 @@ async function init() {
     allScenes = manifest.scenes || [];
     setStatus(`Loaded manifest: ${allScenes.length} scene(s) available.`);
 
-    // Fit map to all scene bounds
-    if (allScenes.length > 0) {
-      const allBounds = allScenes.map((s) => boundsToLatLngBounds(s.bounds));
-      let combined = allBounds[0];
-      allBounds.forEach((b) => (combined = combined.extend(b)));
-      map.fitBounds(combined, { padding: [20, 20] });
+    // Build sorted list of unique available dates
+    availableDates = Array.from(new Set(allScenes.map((s) => s.date))).sort();
+
+    if (availableDates.length > 0 && DATE_INPUT) {
+      DATE_INPUT.min = availableDates[0];
+      DATE_INPUT.max = availableDates[availableDates.length - 1];
+      if (DATE_HELP) {
+        DATE_HELP.textContent = `Available: ${availableDates[0]} → ${availableDates[availableDates.length - 1]} (${availableDates.length} date${availableDates.length === 1 ? "" : "s"})`;
+      }
+
+      // Default to the most recent available date
+      const defaultDate = availableDates[availableDates.length - 1];
+      DATE_INPUT.value = defaultDate;
+
+      DATE_INPUT.addEventListener("change", () => {
+        const v = DATE_INPUT.value;
+        if (!v) {
+          selectDate(null);
+          return;
+        }
+        if (!availableDates.includes(v)) {
+          setStatus(`No data for ${v}. Pick a highlighted/available date.`);
+          return;
+        }
+        selectDate(v);
+      });
     }
 
     map.on("moveend zoomend", scheduleUpdate);
-    await updateLayers();
+
+    // Initial view: most recent date if available, otherwise all scenes
+    if (availableDates.length > 0) {
+      await selectDate(availableDates[availableDates.length - 1]);
+    } else {
+      await selectDate(null);
+    }
   } catch (e) {
     setStatus("Failed to load manifest: " + e.message);
     console.error(e);
