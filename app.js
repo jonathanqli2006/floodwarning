@@ -2,6 +2,8 @@
 
 const STATUS = document.getElementById("status");
 const LEGEND = document.getElementById("legend");
+const DATE_INPUT = document.getElementById("dateInput");
+const DATE_HELP = document.getElementById("dateHelp");
 
 const CLASSES = {
   1: { color: "rgba(0, 92, 230, 0.7)", label: "Pre-event Water" },
