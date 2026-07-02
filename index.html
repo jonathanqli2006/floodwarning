@@ -3,61 +3,68 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Flood Risk Dashboard</title>
+    <title>FloodTrace — SAR Flood Monitoring</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
     <link rel="stylesheet" href="styles.css" />
-    <link
-      rel="stylesheet"
-      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-      integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
-      crossorigin=""
-    />
   </head>
   <body>
-    <div class="layout">
-      <aside class="panel">
-        <div class="panel__header">
-          <div class="title">Flood Risk</div>
-          <div class="subtitle">Select a date to view risk</div>
-        </div>
+    <div class="shell">
 
-        <div class="panel__section">
-          <label class="label" for="dateInput">Date</label>
-          <input id="dateInput" class="date" type="date" />
-          <div id="dateHelp" class="help"></div>
-        </div>
+      <!-- Sidebar -->
+      <aside class="sidebar" id="sidebar">
+        <div class="sidebar-inner">
 
-        <div class="panel__section">
-          <div class="label">Legend</div>
-          <div id="legend" class="legend"></div>
-        </div>
-
-        <div class="panel__section">
-          <div class="label">Status</div>
-          <div id="status" class="status">Loading…</div>
-        </div>
-
-        <div class="panel__footer">
-          <div class="muted">
-<<<<<<< HEAD
-            Basemap © OpenStreetMap contributors. Overlay GeoTIFF rasters in
-            <code>data/</code> (one <code>.tif</code> per date).
-=======
-            Basemap © OpenStreetMap contributors. Sentinel-1 SAR flood classification data.
->>>>>>> 8818f9af4019591b5b5d5888c63ac9e82fe2b1bc
+          <!-- Header -->
+          <div class="sidebar-header">
+            <div class="wordmark">
+              <span class="wordmark-flood">Flood</span><span class="wordmark-trace">Trace</span>
+            </div>
+            <div class="tagline">SAR Flood Monitoring</div>
           </div>
+
+          <!-- Date control -->
+          <section class="sidebar-section">
+            <div class="section-label">ACQUISITION DATE</div>
+            <input id="dateInput" class="date-input" type="date" />
+            <div id="dateHelp" class="date-help"></div>
+          </section>
+
+          <!-- Legend -->
+          <section class="sidebar-section">
+            <div class="section-label">CLASSIFICATION</div>
+            <div id="legend" class="legend"></div>
+          </section>
+
+          <!-- Status -->
+          <section class="sidebar-section">
+            <div class="section-label">STATUS</div>
+            <div id="status" class="status-text">Initializing…</div>
+          </section>
+
+          <!-- Footer -->
+          <div class="sidebar-footer">
+            <div class="footer-line">Sentinel-1 SAR · SIENA Model</div>
+            <div class="footer-line">© OpenStreetMap contributors</div>
+          </div>
+
         </div>
       </aside>
 
-      <main class="mapWrap">
-        <div id="map" class="map"></div>
+      <!-- Map -->
+      <main class="map-wrap">
+        <div id="map"></div>
+        <div class="scale-bar" id="scaleBar">
+          <div class="scale-bar-line" id="scaleBarLine"></div>
+          <div class="scale-bar-label" id="scaleBarLabel"></div>
+        </div>
       </main>
+
     </div>
 
-    <script
-      src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
-      integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
-      crossorigin=""
-    ></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
     <script src="https://unpkg.com/georaster@1.6.0/dist/georaster.browser.bundle.min.js"></script>
     <script src="https://unpkg.com/georaster-layer-for-leaflet@3.10.0/dist/georaster-layer-for-leaflet.min.js"></script>
     <script src="app.js"></script>
