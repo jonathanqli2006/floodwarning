@@ -13,11 +13,9 @@
   <body>
     <div class="shell">
 
-      <!-- Sidebar -->
-      <aside class="sidebar" id="sidebar">
+      <aside class="sidebar">
         <div class="sidebar-inner">
 
-          <!-- Header -->
           <div class="sidebar-header">
             <div class="wordmark">
               <span class="wordmark-flood">Flood</span><span class="wordmark-trace">Trace</span>
@@ -25,11 +23,16 @@
             <div class="tagline">SAR Flood Monitoring</div>
           </div>
 
-          <!-- Date control -->
+          <!-- Calendar -->
           <section class="sidebar-section">
             <div class="section-label">ACQUISITION DATE</div>
-            <input id="dateInput" class="date-input" type="date" />
-            <div id="dateHelp" class="date-help"></div>
+            <div class="cal-nav">
+              <button class="cal-nav-btn" id="calPrev">&#8249;</button>
+              <div class="cal-month-label" id="calMonthLabel"></div>
+              <button class="cal-nav-btn" id="calNext">&#8250;</button>
+            </div>
+            <div class="cal-grid" id="calGrid"></div>
+            <div class="cal-selected" id="calSelected">No date selected</div>
           </section>
 
           <!-- Legend -->
@@ -44,19 +47,17 @@
             <div id="status" class="status-text">Initializing…</div>
           </section>
 
-          <!-- Footer -->
           <div class="sidebar-footer">
             <div class="footer-line">Sentinel-1 SAR · SIENA Model</div>
-            <div class="footer-line">© OpenStreetMap contributors</div>
+            <div class="footer-line">© OpenStreetMap · CARTO</div>
           </div>
 
         </div>
       </aside>
 
-      <!-- Map -->
       <main class="map-wrap">
         <div id="map"></div>
-        <div class="scale-bar" id="scaleBar">
+        <div class="scale-bar">
           <div class="scale-bar-line" id="scaleBarLine"></div>
           <div class="scale-bar-label" id="scaleBarLabel"></div>
         </div>

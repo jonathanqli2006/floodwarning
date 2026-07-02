@@ -1,11 +1,14 @@
 /* global L, parseGeoraster, GeoRasterLayer */
 
-const STATUS    = document.getElementById("status");
-const LEGEND    = document.getElementById("legend");
-const DATE_INPUT = document.getElementById("dateInput");
-const DATE_HELP  = document.getElementById("dateHelp");
+const STATUS      = document.getElementById("status");
+const LEGEND      = document.getElementById("legend");
 const SCALE_LINE  = document.getElementById("scaleBarLine");
 const SCALE_LABEL = document.getElementById("scaleBarLabel");
+const CAL_GRID    = document.getElementById("calGrid");
+const CAL_MONTH   = document.getElementById("calMonthLabel");
+const CAL_PREV    = document.getElementById("calPrev");
+const CAL_NEXT    = document.getElementById("calNext");
+const CAL_SELECTED = document.getElementById("calSelected");
 
 const CLASSES = {
   1: { color: "rgba(74, 158, 255, 0.75)",  label: "Pre-event Water" },
@@ -17,27 +20,18 @@ const ZOOM_THRESHOLD = 7;
 
 // ── Benchmarking ──────────────────────────────────────────────────────────────
 const BENCHMARK = { enabled: true, log: [] };
-
 function benchmarkStart() { return performance.now(); }
-
 function benchmarkEnd(t0, info) {
   if (!BENCHMARK.enabled) return;
   const ms = Math.round(performance.now() - t0);
-  const entry = { timestamp: new Date().toISOString(), msElapsed: ms, ...info };
-  BENCHMARK.log.push(entry);
-  console.log(`[benchmark] zoom=${entry.zoom} threshold=${ZOOM_THRESHOLD} mode=${entry.mode} visible=${entry.visibleCount} newlyLoaded=${entry.newlyLoaded} time=${ms}ms`);
+  BENCHMARK.log.push({ timestamp: new Date().toISOString(), msElapsed: ms, ...info });
+  console.log(`[benchmark] zoom=${info.zoom} mode=${info.mode} visible=${info.visibleCount} newlyLoaded=${info.newlyLoaded} time=${ms}ms`);
 }
-
 window.printBenchmarkSummary = () => {
   if (!BENCHMARK.log.length) { console.log("No data yet."); return; }
   console.table(BENCHMARK.log);
-  const data = BENCHMARK.log.filter(e => e.mode === "data" && e.newlyLoaded > 0);
-  if (data.length) {
-    const avg = data.reduce((s, e) => s + e.msElapsed / e.newlyLoaded, 0) / data.length;
-    console.log(`Avg ms per scene: ${avg.toFixed(1)}`);
-  }
 };
-window.clearBenchmark = () => { BENCHMARK.log = []; console.log("Cleared."); };
+window.clearBenchmark = () => { BENCHMARK.log = []; };
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 function setStatus(text) { STATUS.textContent = text; }
@@ -54,10 +48,8 @@ function popupHtml(scene) {
   const t = parseSceneTime(scene.filename);
   return `
     <div class="popup-date">${scene.date}</div>
-    ${t ? `
-      <div class="popup-row"><b>Pass start</b> ${t.start}</div>
-      <div class="popup-row"><b>Pass end&nbsp;</b> ${t.end}</div>
-    ` : ""}
+    ${t ? `<div class="popup-row"><b>Pass start</b> ${t.start}</div>
+           <div class="popup-row"><b>Pass end&nbsp;</b> ${t.end}</div>` : ""}
     <div class="popup-filename">${scene.filename}</div>
   `;
 }
@@ -65,82 +57,126 @@ function popupHtml(scene) {
 function renderLegend() {
   LEGEND.innerHTML = "";
   Object.entries(CLASSES).forEach(([, cls]) => {
-    const row   = document.createElement("div");  row.className = "legendItem";
-    const sw    = document.createElement("div");  sw.className  = "swatch";
+    const row = document.createElement("div"); row.className = "legendItem";
+    const sw  = document.createElement("div"); sw.className  = "swatch";
     sw.style.background = cls.color;
-    const label = document.createElement("div");  label.className = "legendText";
-    label.textContent = cls.label;
-    row.appendChild(sw); row.appendChild(label); LEGEND.appendChild(row);
+    const lbl = document.createElement("div"); lbl.className = "legendText";
+    lbl.textContent = cls.label;
+    row.append(sw, lbl); LEGEND.appendChild(row);
   });
-  // outline entry
   const row = document.createElement("div"); row.className = "legendItem";
   const sw  = document.createElement("div"); sw.className  = "swatch";
-  sw.style.background = "transparent";
-  sw.style.border     = "1.5px solid rgba(0,212,255,0.5)";
-  const label = document.createElement("div"); label.className = "legendText";
-  label.style.color = "#5a7090";
-  label.textContent = "Scene outline (zoom in to load)";
-  row.appendChild(sw); row.appendChild(label); LEGEND.appendChild(row);
+  sw.style.cssText = "background:transparent;border:1.5px solid rgba(0,212,255,0.5)";
+  const lbl = document.createElement("div"); lbl.className = "legendText";
+  lbl.style.color = "#5a7090"; lbl.textContent = "Scene outline (zoom in to load)";
+  row.append(sw, lbl); LEGEND.appendChild(row);
 }
 
+// ── Calendar ──────────────────────────────────────────────────────────────────
+const MONTH_NAMES = ["January","February","March","April","May","June",
+                     "July","August","September","October","November","December"];
+const DAY_HEADERS = ["Su","Mo","Tu","We","Th","Fr","Sa"];
+
+let calYear  = new Date().getFullYear();
+let calMonth = new Date().getMonth();
+let availableDatesSet = new Set();
+let selectedDate = null;
+
+function renderCalendar() {
+  CAL_MONTH.textContent = `${MONTH_NAMES[calMonth]} ${calYear}`;
+  CAL_GRID.innerHTML = "";
+
+  // Day headers
+  DAY_HEADERS.forEach(d => {
+    const h = document.createElement("div"); h.className = "cal-day-header";
+    h.textContent = d; CAL_GRID.appendChild(h);
+  });
+
+  const firstDay = new Date(calYear, calMonth, 1).getDay();
+  const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
+
+  // Empty cells before first day
+  for (let i = 0; i < firstDay; i++) {
+    const e = document.createElement("div"); e.className = "cal-day empty";
+    CAL_GRID.appendChild(e);
+  }
+
+  // Day cells
+  for (let d = 1; d <= daysInMonth; d++) {
+    const dateStr = `${calYear}-${String(calMonth+1).padStart(2,"0")}-${String(d).padStart(2,"0")}`;
+    const cell = document.createElement("div");
+    cell.className = "cal-day";
+    cell.textContent = d;
+
+    if (availableDatesSet.has(dateStr)) {
+      cell.classList.add("has-data");
+      cell.addEventListener("click", () => pickDate(dateStr));
+    }
+    if (dateStr === selectedDate) cell.classList.add("selected");
+    CAL_GRID.appendChild(cell);
+  }
+}
+
+function pickDate(dateStr) {
+  selectedDate = dateStr;
+  CAL_SELECTED.textContent = dateStr;
+  renderCalendar(); // re-render to update selected highlight
+  selectDate(dateStr);
+}
+
+CAL_PREV.addEventListener("click", () => {
+  calMonth--;
+  if (calMonth < 0) { calMonth = 11; calYear--; }
+  renderCalendar();
+});
+
+CAL_NEXT.addEventListener("click", () => {
+  calMonth++;
+  if (calMonth > 11) { calMonth = 0; calYear++; }
+  renderCalendar();
+});
+
 // ── Scale bar ─────────────────────────────────────────────────────────────────
-// Computes a round-number distance label for the current zoom / latitude.
 function updateScaleBar() {
-  const center  = map.getCenter();
-  const zoom    = map.getZoom();
-  const latRad  = center.lat * Math.PI / 180;
-  // metres per pixel at this zoom & latitude
-  const mpp     = (156543.03392 * Math.cos(latRad)) / Math.pow(2, zoom);
-
-  // Pick the largest round number that fits in ~120px
-  const maxPx   = 120;
-  const maxM    = mpp * maxPx;
-
-  const steps   = [1,2,5,10,20,50,100,200,500,1000,2000,5000,10000,20000,50000,100000,200000,500000];
-  let dist      = steps[0];
+  const lat  = map.getCenter().lat;
+  const zoom = map.getZoom();
+  const mpp  = (156543.03392 * Math.cos(lat * Math.PI / 180)) / Math.pow(2, zoom);
+  const maxM = mpp * 120;
+  const steps = [1,2,5,10,20,50,100,200,500,1000,2000,5000,10000,20000,50000,100000,200000,500000];
+  let dist = steps[0];
   for (const s of steps) { if (s <= maxM) dist = s; else break; }
-
-  const px      = dist / mpp;
-  const label   = dist >= 1000 ? `${dist/1000} km` : `${dist} m`;
-
-  SCALE_LINE.style.width  = `${Math.round(px)}px`;
-  SCALE_LABEL.textContent = label;
+  SCALE_LINE.style.width  = `${Math.round(dist / mpp)}px`;
+  SCALE_LABEL.textContent = dist >= 1000 ? `${dist/1000} km` : `${dist} m`;
 }
 
 // ── Map ───────────────────────────────────────────────────────────────────────
-const map = L.map("map", { zoomControl: true, attributionControl: true }).setView([45, -100], 4);
+const map = L.map("map", { zoomControl: true }).setView([45, -100], 4);
 
-// Dark minimal basemap — Stadia Alidade Smooth Dark
-// Falls back to CartoDB Dark Matter if Stadia is unavailable
-L.tileLayer("https://tiles.stadiamaps.com/tiles/alidade_smooth_dark/{z}/{x}/{y}{r}.png", {
-  maxZoom: 20,
-  attribution: '&copy; <a href="https://stadiamaps.com/">Stadia Maps</a> &copy; <a href="https://openmaptiles.org/">OpenMapTiles</a> &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+// CartoDB Dark Matter — free, no API key required, dark minimal basemap
+L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png", {
+  maxZoom: 19,
+  attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/">CARTO</a>',
 }).addTo(map);
 
 map.on("moveend zoomend", updateScaleBar);
 
-let allScenes     = [];
-let availableDates = [];
-let selectedDate  = null;
-
+let allScenes    = [];
 const outlineLayers  = new Map();
 const dataLayers     = new Map();
 const georasterCache = new Map();
-let outlineGroup     = L.layerGroup().addTo(map);
-let dataGroup        = L.layerGroup().addTo(map);
+const outlineGroup   = L.layerGroup().addTo(map);
+const dataGroup      = L.layerGroup().addTo(map);
 
-function boundsToLatLng(bounds) {
-  return L.latLngBounds([bounds[1], bounds[0]], [bounds[3], bounds[2]]);
+function boundsToLatLng(b) {
+  return L.latLngBounds([b[1], b[0]], [b[3], b[2]]);
 }
 
-// ── Layer management ──────────────────────────────────────────────────────────
+// ── Layers ────────────────────────────────────────────────────────────────────
 function addOutline(scene) {
   if (outlineLayers.has(scene.filename)) return;
   const rect = L.rectangle(boundsToLatLng(scene.bounds), {
-    color:       "rgba(0,212,255,0.6)",
-    weight:      1,
-    fillColor:   "rgba(0,212,255,0.03)",
-    fillOpacity: 1,
+    color: "rgba(0,212,255,0.6)", weight: 1,
+    fillColor: "rgba(0,212,255,0.03)", fillOpacity: 1,
   });
   rect.bindPopup(popupHtml(scene));
   outlineLayers.set(scene.filename, rect);
@@ -153,16 +189,14 @@ async function addData(scene) {
   try {
     let gr = georasterCache.get(scene.filename);
     if (!gr) {
-      const buf = await (await fetch(scene.url)).arrayBuffer();
-      gr = await parseGeoraster(buf);
+      gr = await parseGeoraster(await (await fetch(scene.url)).arrayBuffer());
       georasterCache.set(scene.filename, gr);
     }
     const layer = new GeoRasterLayer({
-      georaster: gr,
-      opacity: 0.85,
-      pixelValuesToColorFn: vals => {
-        if (vals[0] === 1) return "rgba(74,158,255,0.75)";
-        if (vals[0] === 3) return "rgba(255,59,59,0.85)";
+      georaster: gr, opacity: 0.85,
+      pixelValuesToColorFn: v => {
+        if (v[0] === 1) return "rgba(74,158,255,0.75)";
+        if (v[0] === 3) return "rgba(255,59,59,0.85)";
         return null;
       },
       resolution: 128,
@@ -176,10 +210,10 @@ async function addData(scene) {
   }
 }
 
-function removeData(filename) {
-  const l = dataLayers.get(filename);
+function removeData(fn) {
+  const l = dataLayers.get(fn);
   if (l && l !== "loading") dataGroup.removeLayer(l);
-  dataLayers.delete(filename);
+  dataLayers.delete(fn);
 }
 
 function getVisibleScenes() {
@@ -190,33 +224,25 @@ function getVisibleScenes() {
   });
 }
 
-function getScenesForDate(d) { return allScenes.filter(s => s.date === d); }
-
 async function selectDate(dateStr) {
   selectedDate = dateStr || null;
-  outlineGroup.clearLayers();
-  dataGroup.clearLayers();
-  outlineLayers.clear();
-  dataLayers.clear();
+  outlineGroup.clearLayers(); dataGroup.clearLayers();
+  outlineLayers.clear(); dataLayers.clear();
 
-  const scenes = selectedDate ? getScenesForDate(selectedDate) : allScenes;
-  if (!scenes.length) {
-    setStatus(selectedDate ? `No scenes for ${selectedDate}.` : "No scenes available.");
-    return;
-  }
+  const scenes = selectedDate ? allScenes.filter(s => s.date === selectedDate) : allScenes;
+  if (!scenes.length) { setStatus(selectedDate ? `No scenes for ${selectedDate}.` : "No scenes."); return; }
 
   let combined = boundsToLatLng(scenes[0].bounds);
   scenes.forEach(s => (combined = combined.extend(boundsToLatLng(s.bounds))));
   map.fitBounds(combined, { padding: [20, 20] });
-
   await updateLayers();
 }
 
 async function updateLayers() {
-  const t0      = benchmarkStart();
-  const zoom    = map.getZoom();
+  const t0 = benchmarkStart();
+  const zoom = map.getZoom();
   const visible = getVisibleScenes();
-  const visSet  = new Set(visible.map(s => s.filename));
+  const visSet = new Set(visible.map(s => s.filename));
 
   if (zoom < ZOOM_THRESHOLD) {
     outlineGroup.clearLayers();
@@ -224,15 +250,12 @@ async function updateLayers() {
       const r = outlineLayers.get(scene.filename) || (() => { addOutline(scene); return outlineLayers.get(scene.filename); })();
       outlineGroup.addLayer(r);
     });
-    dataGroup.clearLayers();
-    dataLayers.clear();
+    dataGroup.clearLayers(); dataLayers.clear();
     setStatus(`${visible.length} scene outline${visible.length !== 1 ? "s" : ""} — zoom in to load data`);
     benchmarkEnd(t0, { zoom, mode: "outline", visibleCount: visible.length, newlyLoaded: 0 });
   } else {
     outlineGroup.clearLayers();
-    for (const fn of Array.from(dataLayers.keys())) {
-      if (!visSet.has(fn)) removeData(fn);
-    }
+    for (const fn of Array.from(dataLayers.keys())) { if (!visSet.has(fn)) removeData(fn); }
     const toLoad = visible.filter(s => !dataLayers.has(s.filename));
     setStatus(`Loading ${toLoad.length} scene${toLoad.length !== 1 ? "s" : ""}…`);
     await Promise.all(toLoad.map(addData));
@@ -242,10 +265,7 @@ async function updateLayers() {
 }
 
 let updateTimer = null;
-function scheduleUpdate() {
-  clearTimeout(updateTimer);
-  updateTimer = setTimeout(updateLayers, 250);
-}
+function scheduleUpdate() { clearTimeout(updateTimer); updateTimer = setTimeout(updateLayers, 250); }
 
 // ── Init ──────────────────────────────────────────────────────────────────────
 async function init() {
@@ -259,28 +279,26 @@ async function init() {
     const manifest = await res.json();
     allScenes = manifest.scenes || [];
 
-    availableDates = Array.from(new Set(allScenes.map(s => s.date))).sort();
+    const dates = Array.from(new Set(allScenes.map(s => s.date))).sort();
+    availableDatesSet = new Set(dates);
 
-    if (availableDates.length && DATE_INPUT) {
-      DATE_INPUT.min   = availableDates[0];
-      DATE_INPUT.max   = availableDates[availableDates.length - 1];
-      if (DATE_HELP) {
-        DATE_HELP.textContent = `${availableDates[0]}  →  ${availableDates[availableDates.length - 1]}  ·  ${availableDates.length} date${availableDates.length !== 1 ? "s" : ""}`;
-      }
-      const defaultDate = availableDates[availableDates.length - 1];
-      DATE_INPUT.value = defaultDate;
-      DATE_INPUT.addEventListener("change", () => {
-        const v = DATE_INPUT.value;
-        if (!v) { selectDate(null); return; }
-        if (!availableDates.includes(v)) { setStatus(`No data for ${v}.`); return; }
-        selectDate(v);
-      });
+    // Navigate calendar to most recent date's month
+    if (dates.length) {
+      const latest = dates[dates.length - 1];
+      const [y, m] = latest.split("-").map(Number);
+      calYear  = y;
+      calMonth = m - 1;
     }
+    renderCalendar();
 
     map.on("moveend zoomend", scheduleUpdate);
 
-    if (availableDates.length) {
-      await selectDate(availableDates[availableDates.length - 1]);
+    if (dates.length) {
+      const latest = dates[dates.length - 1];
+      selectedDate = latest;
+      CAL_SELECTED.textContent = latest;
+      renderCalendar();
+      await selectDate(latest);
     } else {
       await selectDate(null);
     }

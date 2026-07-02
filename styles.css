@@ -307,3 +307,97 @@ html, body { height: 100%; background: var(--bg); color: var(--text-primary); fo
   .sidebar { width: 100%; height: auto; border-right: none; border-bottom: 1px solid var(--panel-border); }
   .map-wrap { flex: 1; min-height: 60vh; }
 }
+
+/* ── Calendar ── */
+.cal-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.cal-nav-btn {
+  background: none;
+  border: 1px solid var(--panel-border);
+  color: var(--text-muted);
+  font-size: 16px;
+  width: 28px;
+  height: 28px;
+  border-radius: 5px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: border-color 0.15s, color 0.15s;
+  line-height: 1;
+}
+
+.cal-nav-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.cal-month-label {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--text-primary);
+  letter-spacing: 0.05em;
+}
+
+.cal-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+}
+
+.cal-day-header {
+  font-family: var(--mono);
+  font-size: 8px;
+  color: var(--text-dim);
+  text-align: center;
+  padding: 3px 0 5px;
+  letter-spacing: 0.05em;
+}
+
+.cal-day {
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--text-muted);
+  border-radius: 4px;
+  cursor: default;
+  transition: background 0.12s, color 0.12s;
+}
+
+.cal-day.empty { pointer-events: none; }
+
+.cal-day.has-data {
+  color: var(--text-primary);
+  background: rgba(0, 212, 255, 0.08);
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.cal-day.has-data:hover {
+  background: rgba(0, 212, 255, 0.18);
+  color: var(--accent);
+}
+
+.cal-day.selected {
+  background: var(--accent) !important;
+  color: #0a0f1e !important;
+  font-weight: 600;
+}
+
+.cal-selected {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--accent);
+  margin-top: 10px;
+  text-align: center;
+  opacity: 0.8;
+  min-height: 14px;
+}
