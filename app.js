@@ -150,11 +150,20 @@ function updateScaleBar() {
 }
 
 // ── Map ───────────────────────────────────────────────────────────────────────
-const map = L.map("map", { zoomControl: true }).setView([45, -100], 4);
+const map = L.map("map", { 
+  zoomControl: true,
+  minZoom: 3,        // prevents zooming out so far the world repeats
+  maxBoundsViscosity: 1.0,
+}).setView([45, -100], 4);
+
+// Lock the map to one instance of the world
+map.setMaxBounds([[-90, -180], [90, 180]]);
 
 // CartoDB Dark Matter — free, no API key required, dark minimal basemap
 L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png", {
   maxZoom: 19,
+  minZoom: 3,
+  noWrap: true,
   attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/">CARTO</a>',
 }).addTo(map);
 
