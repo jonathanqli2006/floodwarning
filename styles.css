@@ -254,13 +254,17 @@ html, body {
 }
 
 #map {
-  filter: saturate(0.55) brightness(1.02);
+  width: 100%;
+  height: 100%;
+  /* Desaturate OSM tiles so they don't compete with flood data */
+  filter: saturate(0.25) brightness(1.05);
 }
 
+/* But keep our data layers fully saturated */
 .leaflet-overlay-pane,
 .leaflet-marker-pane,
 .leaflet-popup-pane {
-  filter: saturate(2) brightness(1);
+  filter: saturate(4) brightness(0.95);
 }
 
 /* ── Leaflet overrides ── */

@@ -33,7 +33,7 @@ window.clearBenchmark = () => { BENCHMARK.log = []; };
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 function setStatus(text) { STATUS.textContent = text; }
-function setProgress(pct) { PROGRESS.style.width = `${Math.min(100, Math.max(0, pct))}%`; }
+function setProgress(pct) { if (PROGRESS) PROGRESS.style.width = `${Math.min(100, Math.max(0, pct))}%`; }
 
 function parseSceneTime(filename) {
   const m = filename.match(/(\d{8}T\d{6})_(\d{8}T\d{6})/);
@@ -68,10 +68,9 @@ function renderLegend() {
     lbl.textContent = cls.label;
     row.append(sw, lbl); LEGEND.appendChild(row);
   });
-  // Outline entry
   const row = document.createElement("div"); row.className = "legendItem";
   const sw  = document.createElement("div"); sw.className  = "swatch";
-  sw.style.cssText = "background:transparent;border:1.5px solid rgba(45,125,111,0.4)";
+  sw.style.cssText = "background:transparent;border:2px solid #2d7d6f";
   const lbl = document.createElement("div"); lbl.className = "legendText";
   lbl.style.color = "#8a8a8a"; lbl.textContent = "Scene coverage";
   row.append(sw, lbl); LEGEND.appendChild(row);
@@ -149,7 +148,6 @@ const map = L.map("map", {
 
 map.setMaxBounds([[-90, -180], [90, 180]]);
 
-// Standard OSM — desaturated via CSS filter on the map element
 L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
   maxZoom: 19,
   noWrap: true,
@@ -233,7 +231,11 @@ async function selectDate(dateStr) {
   setProgress(10);
 
   const scenes = selectedDate ? allScenes.filter(s => s.date === selectedDate) : allScenes;
-  if (!scenes.length) { setStatus(selectedDate ? `No scenes for ${selectedDate}.` : "No scenes."); setProgress(0); return; }
+  if (!scenes.length) {
+    setStatus(selectedDate ? `No scenes for ${selectedDate}.` : "No scenes.");
+    setProgress(0);
+    return;
+  }
 
   let combined = boundsToLatLng(scenes[0].bounds);
   scenes.forEach(s => (combined = combined.extend(boundsToLatLng(s.bounds))));
