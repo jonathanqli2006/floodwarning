@@ -12,8 +12,8 @@ const CAL_SELECTED = document.getElementById("calSelected");
 const PROGRESS     = document.getElementById("progressStrip");
 
 const CLASSES = {
-  1: { color: "rgba(30,100,220,0.85)",  label: "Pre-event Water" },
-  3: { color: "rgba(220,30,30,0.88)",   label: "Flood Inundation" },
+  1: { color: "rgb(0, 4, 255)",  label: "Pre-event Water" },
+  3: { color: "rgb(255, 0, 0)",   label: "Flood Inundation" },
 };
 
 const MANIFEST_URL   = "https://floodtrace-cogs.s3.us-east-2.amazonaws.com/manifest.json";
@@ -195,8 +195,8 @@ async function addData(scene) {
     const layer = new GeoRasterLayer({
       georaster: gr, opacity: 0.9,
       pixelValuesToColorFn: v => {
-        if (v[0] === 1) return "rgba(30,100,220,0.85)";
-        if (v[0] === 3) return "rgba(220,30,30,0.88)";
+        if (v[0] === 1) return "rgba(0, 4, 255, 0.85)";
+        if (v[0] === 3) return "rgb(255, 0, 0)";
         return null;
       },
       resolution: 128,
