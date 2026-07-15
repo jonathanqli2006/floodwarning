@@ -12,8 +12,8 @@ const CAL_SELECTED = document.getElementById("calSelected");
 const PROGRESS     = document.getElementById("progressStrip");
 
 const CLASSES = {
-  1: { color: "rgba(74,127,165,0.75)",  label: "Pre-event Water" },
-  3: { color: "rgba(217,79,61,0.82)",   label: "Flood Inundation" },
+  1: { color: "rgba(30,100,220,0.85)",  label: "Pre-event Water" },
+  3: { color: "rgba(220,30,30,0.88)",   label: "Flood Inundation" },
 };
 
 const MANIFEST_URL   = "https://floodtrace-cogs.s3.us-east-2.amazonaws.com/manifest.json";
@@ -174,11 +174,11 @@ function boundsToLatLng(b) {
 function addOutline(scene) {
   if (outlineLayers.has(scene.filename)) return;
   const rect = L.rectangle(boundsToLatLng(scene.bounds), {
-    color:       "rgba(45,125,111,0.5)",
-    weight:      1.5,
-    fillColor:   "rgba(45,125,111,0.04)",
+    color:       "#2d7d6f",
+    weight:      2,
+    fillColor:   "rgba(45,125,111,0.06)",
     fillOpacity: 1,
-    dashArray:   "4 3",
+    dashArray:   "5 4",
   });
   rect.bindPopup(popupHtml(scene));
   outlineLayers.set(scene.filename, rect);
@@ -197,8 +197,8 @@ async function addData(scene) {
     const layer = new GeoRasterLayer({
       georaster: gr, opacity: 0.9,
       pixelValuesToColorFn: v => {
-        if (v[0] === 1) return "rgba(74,127,165,0.75)";
-        if (v[0] === 3) return "rgba(217,79,61,0.82)";
+        if (v[0] === 1) return "rgba(30,100,220,0.85)";
+        if (v[0] === 3) return "rgba(220,30,30,0.88)";
         return null;
       },
       resolution: 128,
