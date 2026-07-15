@@ -6,7 +6,7 @@
     <title>FloodTrace — SAR Flood Monitoring</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
     <link rel="stylesheet" href="styles.css" />
   </head>
@@ -14,42 +14,40 @@
     <div class="shell">
 
       <aside class="sidebar">
+        <!-- Progress strip — signature element -->
+        <div class="progress-strip" id="progressStrip"></div>
+
         <div class="sidebar-inner">
 
           <div class="sidebar-header">
-            <div class="wordmark">
-              <span class="wordmark-flood">Flood</span><span class="wordmark-trace">Trace</span>
-            </div>
-            <div class="tagline">SAR Flood Monitoring</div>
+            <div class="wordmark">FloodTrace</div>
+            <div class="tagline">Sentinel-1 SAR · Flood Detection</div>
           </div>
 
-          <!-- Calendar -->
           <section class="sidebar-section">
-            <div class="section-label">ACQUISITION DATE</div>
+            <div class="section-label">Acquisition Date</div>
             <div class="cal-nav">
               <button class="cal-nav-btn" id="calPrev">&#8249;</button>
               <div class="cal-month-label" id="calMonthLabel"></div>
               <button class="cal-nav-btn" id="calNext">&#8250;</button>
             </div>
             <div class="cal-grid" id="calGrid"></div>
-            <div class="cal-selected" id="calSelected">No date selected</div>
+            <div class="cal-selected" id="calSelected">Select a date</div>
           </section>
 
-          <!-- Legend -->
           <section class="sidebar-section">
-            <div class="section-label">CLASSIFICATION</div>
+            <div class="section-label">Classification</div>
             <div id="legend" class="legend"></div>
           </section>
 
-          <!-- Status -->
           <section class="sidebar-section">
-            <div class="section-label">STATUS</div>
+            <div class="section-label">Status</div>
             <div id="status" class="status-text">Initializing…</div>
           </section>
 
           <div class="sidebar-footer">
-            <div class="footer-line">Sentinel-1 SAR · SIENA Model</div>
-            <div class="footer-line">© OpenStreetMap · CARTO</div>
+            <div class="footer-line">SIENA classification model</div>
+            <div class="footer-line">© OpenStreetMap contributors</div>
           </div>
 
         </div>

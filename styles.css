@@ -1,25 +1,35 @@
-/* ── Reset & base ── */
+/* ── Reset ── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
-  --bg:          #0a0f1e;
-  --panel:       #0d1526;
-  --panel-border:#1a2a45;
-  --accent:      #00d4ff;
-  --accent-dim:  rgba(0, 212, 255, 0.12);
-  --water:       rgba(74, 158, 255, 0.75);
-  --flood:       rgba(255, 59, 59, 0.85);
-  --text-primary:#e8edf5;
-  --text-muted:  #5a7090;
-  --text-dim:    #3a5070;
-  --mono:        'JetBrains Mono', monospace;
-  --sans:        'Inter', system-ui, sans-serif;
-  --sidebar-w:   280px;
+  --bg:           #f7f5f2;
+  --white:        #ffffff;
+  --border:       #e2ddd8;
+  --border-light: #ede9e4;
+  --teal:         #2d7d6f;
+  --teal-light:   rgba(45, 125, 111, 0.1);
+  --teal-mid:     rgba(45, 125, 111, 0.2);
+  --flood-red:    rgba(217, 79, 61, 0.82);
+  --water-blue:   rgba(74, 127, 165, 0.75);
+  --text:         #1a1a1a;
+  --text-2:       #4a4a4a;
+  --text-3:       #8a8a8a;
+  --text-4:       #b8b8b8;
+  --sans:         'DM Sans', system-ui, sans-serif;
+  --mono:         'DM Mono', monospace;
+  --sidebar-w:    300px;
+  --radius:       6px;
 }
 
-html, body { height: 100%; background: var(--bg); color: var(--text-primary); font-family: var(--sans); }
+html, body {
+  height: 100%;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--sans);
+  -webkit-font-smoothing: antialiased;
+}
 
-/* ── Shell layout ── */
+/* ── Shell ── */
 .shell {
   display: flex;
   height: 100vh;
@@ -30,108 +40,164 @@ html, body { height: 100%; background: var(--bg); color: var(--text-primary); fo
 .sidebar {
   width: var(--sidebar-w);
   flex-shrink: 0;
-  background: var(--panel);
-  border-right: 1px solid var(--panel-border);
+  background: var(--white);
+  border-right: 1px solid var(--border);
   display: flex;
   flex-direction: column;
-  overflow: hidden;
-  /* Scanline texture — the signature element */
-  background-image: repeating-linear-gradient(
-    0deg,
-    transparent,
-    transparent 3px,
-    rgba(0, 212, 255, 0.015) 3px,
-    rgba(0, 212, 255, 0.015) 4px
-  );
   position: relative;
   z-index: 10;
+  box-shadow: 2px 0 12px rgba(0,0,0,0.04);
+}
+
+/* Signature element: thin progress strip at the very top */
+.progress-strip {
+  height: 3px;
+  width: 0%;
+  background: var(--teal);
+  transition: width 0.6s ease;
+  flex-shrink: 0;
 }
 
 .sidebar-inner {
   display: flex;
   flex-direction: column;
-  height: 100%;
-  padding: 0;
+  flex: 1;
   overflow-y: auto;
   overflow-x: hidden;
 }
 
-/* Scrollbar */
 .sidebar-inner::-webkit-scrollbar { width: 3px; }
 .sidebar-inner::-webkit-scrollbar-track { background: transparent; }
-.sidebar-inner::-webkit-scrollbar-thumb { background: var(--panel-border); border-radius: 2px; }
+.sidebar-inner::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
 
-/* ── Wordmark ── */
+/* ── Header ── */
 .sidebar-header {
-  padding: 28px 24px 20px;
-  border-bottom: 1px solid var(--panel-border);
+  padding: 24px 24px 20px;
+  border-bottom: 1px solid var(--border);
 }
 
 .wordmark {
-  font-family: var(--sans);
-  font-size: 22px;
+  font-size: 20px;
   font-weight: 600;
-  letter-spacing: -0.5px;
-  line-height: 1;
-  margin-bottom: 6px;
+  color: var(--text);
+  letter-spacing: -0.4px;
+  margin-bottom: 4px;
 }
 
-.wordmark-flood { color: var(--accent); }
-.wordmark-trace { color: var(--text-primary); }
+.wordmark span { color: var(--teal); }
 
 .tagline {
   font-family: var(--mono);
   font-size: 10px;
-  color: var(--text-muted);
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  color: var(--text-3);
+  letter-spacing: 0.04em;
 }
 
 /* ── Sections ── */
 .sidebar-section {
   padding: 20px 24px;
-  border-bottom: 1px solid var(--panel-border);
+  border-bottom: 1px solid var(--border-light);
 }
 
 .section-label {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-3);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-bottom: 14px;
+}
+
+/* ── Calendar ── */
+.cal-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.cal-nav-btn {
+  background: none;
+  border: 1px solid var(--border);
+  color: var(--text-3);
+  font-size: 15px;
+  width: 26px;
+  height: 26px;
+  border-radius: var(--radius);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: border-color 0.15s, color 0.15s, background 0.15s;
+  line-height: 1;
+}
+
+.cal-nav-btn:hover {
+  border-color: var(--teal);
+  color: var(--teal);
+  background: var(--teal-light);
+}
+
+.cal-month-label {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text);
+}
+
+.cal-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+}
+
+.cal-day-header {
   font-family: var(--mono);
   font-size: 9px;
-  font-weight: 500;
-  color: var(--accent);
-  letter-spacing: 0.15em;
-  text-transform: uppercase;
-  margin-bottom: 12px;
-  opacity: 0.7;
+  color: var(--text-4);
+  text-align: center;
+  padding: 2px 0 6px;
+  letter-spacing: 0.03em;
 }
 
-/* ── Date input ── */
-.date-input {
-  width: 100%;
-  background: rgba(0, 212, 255, 0.05);
-  border: 1px solid var(--panel-border);
-  border-radius: 6px;
-  color: var(--text-primary);
+.cal-day {
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   font-family: var(--mono);
-  font-size: 13px;
-  padding: 9px 12px;
-  outline: none;
+  font-size: 11px;
+  color: var(--text-4);
+  border-radius: 4px;
+  cursor: default;
+  transition: background 0.1s, color 0.1s;
+}
+
+.cal-day.empty { pointer-events: none; }
+
+.cal-day.has-data {
+  color: var(--text);
+  background: var(--teal-light);
   cursor: pointer;
-  transition: border-color 0.2s, background 0.2s;
-  color-scheme: dark;
+  font-weight: 500;
 }
 
-.date-input:hover,
-.date-input:focus {
-  border-color: var(--accent);
-  background: rgba(0, 212, 255, 0.08);
+.cal-day.has-data:hover {
+  background: var(--teal-mid);
+  color: var(--teal);
 }
 
-.date-help {
+.cal-day.selected {
+  background: var(--teal) !important;
+  color: #fff !important;
+  font-weight: 600;
+}
+
+.cal-selected {
   font-family: var(--mono);
-  font-size: 10px;
-  color: var(--text-muted);
-  margin-top: 8px;
-  line-height: 1.5;
+  font-size: 11px;
+  color: var(--teal);
+  margin-top: 10px;
+  font-weight: 500;
 }
 
 /* ── Legend ── */
@@ -148,24 +214,22 @@ html, body { height: 100%; background: var(--bg); color: var(--text-primary); fo
 }
 
 .swatch {
-  width: 14px;
-  height: 14px;
+  width: 12px;
+  height: 12px;
   border-radius: 3px;
   flex-shrink: 0;
 }
 
 .legendText {
-  font-family: var(--sans);
-  font-size: 12px;
-  color: var(--text-primary);
-  font-weight: 400;
+  font-size: 13px;
+  color: var(--text-2);
 }
 
 /* ── Status ── */
 .status-text {
   font-family: var(--mono);
   font-size: 11px;
-  color: var(--text-muted);
+  color: var(--text-3);
   line-height: 1.6;
 }
 
@@ -173,15 +237,13 @@ html, body { height: 100%; background: var(--bg); color: var(--text-primary); fo
 .sidebar-footer {
   margin-top: auto;
   padding: 16px 24px;
-  border-top: 1px solid var(--panel-border);
+  border-top: 1px solid var(--border-light);
 }
 
 .footer-line {
-  font-family: var(--mono);
-  font-size: 9px;
-  color: var(--text-dim);
+  font-size: 10px;
+  color: var(--text-4);
   line-height: 1.8;
-  letter-spacing: 0.04em;
 }
 
 /* ── Map ── */
@@ -194,54 +256,61 @@ html, body { height: 100%; background: var(--bg); color: var(--text-primary); fo
 #map {
   width: 100%;
   height: 100%;
+  /* Desaturate OSM tiles so they don't compete with flood data */
+  filter: saturate(0.25) brightness(1.05);
 }
 
-/* ── Override Leaflet chrome to match dark theme ── */
+/* But keep our data layers fully saturated */
+.leaflet-overlay-pane,
+.leaflet-marker-pane,
+.leaflet-popup-pane {
+  filter: saturate(4) brightness(0.95);
+}
+
+/* ── Leaflet overrides ── */
 .leaflet-bar a,
 .leaflet-bar a:hover {
-  background: var(--panel) !important;
-  color: var(--text-primary) !important;
-  border-color: var(--panel-border) !important;
+  background: var(--white) !important;
+  color: var(--text) !important;
+  border-color: var(--border) !important;
+  font-family: var(--sans) !important;
 }
 
-.leaflet-bar a:hover {
-  background: var(--panel-border) !important;
-}
+.leaflet-bar a:hover { background: var(--bg) !important; }
 
 .leaflet-popup-content-wrapper {
-  background: var(--panel) !important;
-  color: var(--text-primary) !important;
-  border: 1px solid var(--panel-border) !important;
-  border-radius: 8px !important;
-  box-shadow: 0 8px 32px rgba(0,0,0,0.5) !important;
+  background: var(--white) !important;
+  color: var(--text) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 10px !important;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.1) !important;
 }
 
-.leaflet-popup-tip {
-  background: var(--panel) !important;
-}
+.leaflet-popup-tip { background: var(--white) !important; }
 
 .leaflet-popup-content {
   font-family: var(--sans) !important;
-  font-size: 12px !important;
+  font-size: 13px !important;
   line-height: 1.6 !important;
-  color: var(--text-primary) !important;
-  margin: 12px 14px !important;
+  color: var(--text) !important;
+  margin: 14px 16px !important;
 }
 
 .leaflet-control-attribution {
-  background: rgba(10, 15, 30, 0.75) !important;
-  color: var(--text-dim) !important;
+  background: rgba(247, 245, 242, 0.85) !important;
+  color: var(--text-3) !important;
   font-size: 9px !important;
+  font-family: var(--sans) !important;
   backdrop-filter: blur(4px);
 }
 
-.leaflet-control-attribution a { color: var(--text-muted) !important; }
+.leaflet-control-attribution a { color: var(--text-3) !important; }
 
 /* ── Scale bar ── */
 .scale-bar {
   position: absolute;
-  bottom: 24px;
-  right: 24px;
+  bottom: 20px;
+  right: 20px;
   z-index: 800;
   display: flex;
   flex-direction: column;
@@ -252,152 +321,81 @@ html, body { height: 100%; background: var(--bg); color: var(--text-primary); fo
 
 .scale-bar-line {
   height: 4px;
-  border: 1.5px solid var(--accent);
+  border: 1.5px solid var(--teal);
   border-top: none;
-  border-left-width: 1.5px;
-  border-right-width: 1.5px;
-  border-bottom-width: 1.5px;
   border-radius: 0 0 2px 2px;
-  opacity: 0.7;
   min-width: 60px;
   transition: width 0.3s ease;
+  background: transparent;
 }
 
 .scale-bar-label {
   font-family: var(--mono);
   font-size: 10px;
-  color: var(--accent);
-  opacity: 0.7;
-  letter-spacing: 0.05em;
+  color: var(--teal);
+  letter-spacing: 0.04em;
 }
 
-/* ── Popup content styling ── */
-.popup-date {
-  font-family: var(--mono);
+/* ── Popups ── */
+.popup-label {
   font-size: 11px;
-  font-weight: 500;
-  color: var(--accent);
-  margin-bottom: 6px;
-  letter-spacing: 0.05em;
+  font-weight: 600;
+  color: var(--teal);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  margin-bottom: 8px;
 }
 
 .popup-row {
-  font-size: 11px;
-  color: #8aa0bb;
-  margin-bottom: 3px;
+  font-size: 12px;
+  color: var(--text-2);
+  margin-bottom: 4px;
+  display: flex;
+  gap: 8px;
 }
 
-.popup-row b { color: var(--text-primary); font-weight: 500; }
+.popup-row b {
+  color: var(--text);
+  font-weight: 500;
+  min-width: 70px;
+  flex-shrink: 0;
+}
 
 .popup-filename {
-  margin-top: 8px;
+  margin-top: 10px;
   font-family: var(--mono);
   font-size: 9px;
-  color: var(--text-dim);
+  color: var(--text-3);
   word-break: break-all;
   line-height: 1.5;
-  border-top: 1px solid var(--panel-border);
-  padding-top: 6px;
+  border-top: 1px solid var(--border-light);
+  padding-top: 8px;
 }
+
+.popup-download {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 10px;
+  padding: 6px 12px;
+  background: var(--teal-light);
+  border: 1px solid var(--teal-mid);
+  border-radius: var(--radius);
+  color: var(--teal);
+  font-size: 11px;
+  font-weight: 500;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background 0.15s;
+  font-family: var(--sans);
+}
+
+.popup-download:hover { background: var(--teal-mid); }
 
 /* ── Responsive ── */
 @media (max-width: 640px) {
   :root { --sidebar-w: 100vw; }
   .shell { flex-direction: column; }
-  .sidebar { width: 100%; height: auto; border-right: none; border-bottom: 1px solid var(--panel-border); }
-  .map-wrap { flex: 1; min-height: 60vh; }
-}
-
-/* ── Calendar ── */
-.cal-nav {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 10px;
-}
-
-.cal-nav-btn {
-  background: none;
-  border: 1px solid var(--panel-border);
-  color: var(--text-muted);
-  font-size: 16px;
-  width: 28px;
-  height: 28px;
-  border-radius: 5px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: border-color 0.15s, color 0.15s;
-  line-height: 1;
-}
-
-.cal-nav-btn:hover {
-  border-color: var(--accent);
-  color: var(--accent);
-}
-
-.cal-month-label {
-  font-family: var(--mono);
-  font-size: 11px;
-  color: var(--text-primary);
-  letter-spacing: 0.05em;
-}
-
-.cal-grid {
-  display: grid;
-  grid-template-columns: repeat(7, 1fr);
-  gap: 2px;
-}
-
-.cal-day-header {
-  font-family: var(--mono);
-  font-size: 8px;
-  color: var(--text-dim);
-  text-align: center;
-  padding: 3px 0 5px;
-  letter-spacing: 0.05em;
-}
-
-.cal-day {
-  aspect-ratio: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-family: var(--mono);
-  font-size: 10px;
-  color: var(--text-muted);
-  border-radius: 4px;
-  cursor: default;
-  transition: background 0.12s, color 0.12s;
-}
-
-.cal-day.empty { pointer-events: none; }
-
-.cal-day.has-data {
-  color: var(--text-primary);
-  background: rgba(0, 212, 255, 0.08);
-  cursor: pointer;
-  font-weight: 500;
-}
-
-.cal-day.has-data:hover {
-  background: rgba(0, 212, 255, 0.18);
-  color: var(--accent);
-}
-
-.cal-day.selected {
-  background: var(--accent) !important;
-  color: #0a0f1e !important;
-  font-weight: 600;
-}
-
-.cal-selected {
-  font-family: var(--mono);
-  font-size: 10px;
-  color: var(--accent);
-  margin-top: 10px;
-  text-align: center;
-  opacity: 0.8;
-  min-height: 14px;
+  .sidebar { width: 100%; height: auto; border-right: none; border-bottom: 1px solid var(--border); }
+  .map-wrap { flex: 1; min-height: 55vh; }
 }
